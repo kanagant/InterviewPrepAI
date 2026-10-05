@@ -19,15 +19,29 @@ export interface SessionResponse {
 export interface BehavioralQuestion {
   question: string
   rationale: string
+  answer: string
 }
 
-export interface GenerateArtifactResponse {
-  id: number
-  sessionId: number
-  type: 'BEHAVIORAL' | 'TECHNICAL' | 'OA'
-  content: BehavioralQuestion[]
-  createdAt: string
+export interface PracticeProblem {
+  name: string
+  platform: string
+  difficulty: string
+  topics: string[]
+  relevance: string
+  approachHint: string
 }
+
+export interface OaContent {
+  disclaimer: string
+  researchSummary?: string | null
+  problems: PracticeProblem[]
+}
+
+export type ArtifactType = 'BEHAVIORAL' | 'TECHNICAL' | 'OA'
+
+export type GenerateArtifactResponse =
+  | { id: number; sessionId: number; type: 'BEHAVIORAL' | 'TECHNICAL'; content: BehavioralQuestion[]; createdAt: string }
+  | { id: number; sessionId: number; type: 'OA'; content: OaContent; createdAt: string }
 
 export function createSession(payload: CreateSessionRequest): Promise<SessionResponse> {
   return request<SessionResponse>('/sessions', {
@@ -36,10 +50,10 @@ export function createSession(payload: CreateSessionRequest): Promise<SessionRes
   })
 }
 
-export function generateBehavioral(sessionId: number): Promise<GenerateArtifactResponse> {
+export function generateArtifact(sessionId: number, type: ArtifactType): Promise<GenerateArtifactResponse> {
   return request<GenerateArtifactResponse>(`/sessions/${sessionId}/generate`, {
     method: 'POST',
-    body: JSON.stringify({ type: 'BEHAVIORAL' }),
+    body: JSON.stringify({ type }),
   })
 }
 

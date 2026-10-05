@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { getSession, listArtifacts } from '../api/sessions'
-import { QuestionList } from '../components/QuestionList'
+import { ArtifactResultView } from '../components/ArtifactResultView'
 
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -37,12 +37,7 @@ export function SessionDetailPage() {
       )}
 
       {artifactsQuery.data?.map((artifact) => (
-        <div key={artifact.id} className="mt-8">
-          <h2 className="text-lg font-semibold text-slate-900">Behavioral questions</h2>
-          <div className="mt-3">
-            <QuestionList questions={artifact.content} />
-          </div>
-        </div>
+        <ArtifactResultView key={artifact.id} artifact={artifact} />
       ))}
     </div>
   )

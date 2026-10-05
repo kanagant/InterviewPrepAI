@@ -3,8 +3,9 @@ package com.krutika.interviewprepai.service;
 import tools.jackson.databind.ObjectMapper;
 import com.krutika.interviewprepai.dto.BehavioralQuestion;
 import com.krutika.interviewprepai.dto.GenerateArtifactResponse;
+import com.krutika.interviewprepai.dto.OaContent;
 import com.krutika.interviewprepai.exception.ClaudeApiException;
-import com.krutika.interviewprepai.exception.UnsupportedArtifactTypeException;
+import com.krutika.interviewprepai.exception.CompanyRequiredForOaException;
 import com.krutika.interviewprepai.model.ArtifactType;
 import com.krutika.interviewprepai.model.PrepArtifact;
 import com.krutika.interviewprepai.model.PrepSession;
@@ -40,22 +41,25 @@ public class ArtifactGenerationService {
     }
 
     public GenerateArtifactResponse generate(Long userId, Long sessionId, ArtifactType type) {
-        if (type != ArtifactType.BEHAVIORAL) {
-            throw new UnsupportedArtifactTypeException(type);
-        }
-
         PrepSession session = prepSessionService.findByIdForUserOrThrow(sessionId, userId);
 
-        PromptBuilder.ClaudePrompt prompt = promptBuilder.buildBehavioralPrompt(session);
-        List<BehavioralQuestion> questions = claudeClient.generateBehavioralQuestions(prompt);
+        if (type == ArtifactType.OA && (session.getCompany() == null || session.getCompany().isBlank())) {
+            throw new CompanyRequiredForOaException();
+        }
 
-        PrepArtifact artifact = persist(sessionId, type, questions);
+        Object content = switch (type) {
+            case BEHAVIORAL -> claudeClient.generateQuestions(promptBuilder.buildBehavioralPrompt(session));
+            case TECHNICAL -> claudeClient.generateQuestions(promptBuilder.buildTechnicalPrompt(session));
+            case OA -> claudeClient.generateOaRecommendations(promptBuilder.buildOaPrompt(session));
+        };
+
+        PrepArtifact artifact = persist(sessionId, type, content);
 
         return new GenerateArtifactResponse(
                 artifact.getId(),
                 artifact.getSessionId(),
                 artifact.getType(),
-                questions,
+                content,
                 artifact.getCreatedAt()
         );
     }
@@ -69,26 +73,32 @@ public class ArtifactGenerationService {
     }
 
     private GenerateArtifactResponse toResponse(PrepArtifact artifact) {
-        BehavioralQuestion[] parsed;
-        try {
-            parsed = objectMapper.readValue(artifact.getContent(), BehavioralQuestion[].class);
-        } catch (Exception e) {
-            throw new ClaudeApiException("Failed to parse stored artifact content", e);
-        }
+        Object content = switch (artifact.getType()) {
+            case BEHAVIORAL, TECHNICAL -> Arrays.asList(readValue(artifact.getContent(), BehavioralQuestion[].class));
+            case OA -> readValue(artifact.getContent(), OaContent.class);
+        };
         return new GenerateArtifactResponse(
                 artifact.getId(),
                 artifact.getSessionId(),
                 artifact.getType(),
-                Arrays.asList(parsed),
+                content,
                 artifact.getCreatedAt()
         );
     }
 
+    private <T> T readValue(String json, Class<T> type) {
+        try {
+            return objectMapper.readValue(json, type);
+        } catch (Exception e) {
+            throw new ClaudeApiException("Failed to parse stored artifact content", e);
+        }
+    }
+
     @Transactional
-    PrepArtifact persist(Long sessionId, ArtifactType type, List<BehavioralQuestion> questions) {
+    PrepArtifact persist(Long sessionId, ArtifactType type, Object content) {
         String contentJson;
         try {
-            contentJson = objectMapper.writeValueAsString(questions);
+            contentJson = objectMapper.writeValueAsString(content);
         } catch (Exception e) {
             throw new ClaudeApiException("Failed to serialize generated content", e);
         }

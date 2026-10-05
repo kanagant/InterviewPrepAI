@@ -19,8 +19,8 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(UnsupportedArtifactTypeException.class)
-    public ResponseEntity<ApiError> handleUnsupportedType(UnsupportedArtifactTypeException ex) {
+    @ExceptionHandler(CompanyRequiredForOaException.class)
+    public ResponseEntity<ApiError> handleCompanyRequired(CompanyRequiredForOaException ex) {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

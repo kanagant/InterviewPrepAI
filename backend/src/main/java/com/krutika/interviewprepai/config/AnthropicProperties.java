@@ -8,6 +8,8 @@ public record AnthropicProperties(
         String model,
         String baseUrl,
         int maxTokens,
-        String version
+        String version,
+        int oaMaxSearches,
+        int maxTokensOa
 ) {
 }
