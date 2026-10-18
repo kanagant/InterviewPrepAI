@@ -50,6 +50,13 @@ export function createSession(payload: CreateSessionRequest): Promise<SessionRes
   })
 }
 
+export function uploadSession(formData: FormData): Promise<SessionResponse> {
+  return request<SessionResponse>('/sessions/upload', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
 export function generateArtifact(sessionId: number, type: ArtifactType): Promise<GenerateArtifactResponse> {
   return request<GenerateArtifactResponse>(`/sessions/${sessionId}/generate`, {
     method: 'POST',

@@ -17,7 +17,11 @@ export function SessionsListPage() {
 
       {data && data.length === 0 && (
         <p className="mt-4 text-slate-500">
-          No sessions yet. <Link to="/" className="underline">Create one</Link>.
+          No sessions yet.{' '}
+          <Link to="/" className="font-medium text-blue-600 hover:text-blue-700">
+            Create one
+          </Link>
+          .
         </p>
       )}
 
@@ -26,7 +30,7 @@ export function SessionsListPage() {
           <li key={session.id}>
             <Link
               to={`/sessions/${session.id}`}
-              className="block rounded-lg border border-slate-200 p-4 hover:bg-slate-50"
+              className="block rounded-lg border border-slate-200 p-4 transition-all hover:border-blue-300 hover:shadow-sm"
             >
               <p className="font-medium text-slate-900">
                 {session.role ?? 'Untitled role'}

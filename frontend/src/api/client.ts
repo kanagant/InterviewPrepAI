@@ -6,10 +6,13 @@ const TOKEN_KEY = 'authToken'
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = localStorage.getItem(TOKEN_KEY)
+  const isFormData = init?.body instanceof FormData
 
   const res = await fetch(`/api${path}`, {
     headers: {
-      'Content-Type': 'application/json',
+      // FormData bodies must NOT have Content-Type set manually - the browser
+      // needs to compute the multipart boundary itself when serializing it.
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...init,
